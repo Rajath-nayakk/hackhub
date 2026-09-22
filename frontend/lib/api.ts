@@ -55,15 +55,62 @@ export async function getProjects() {
 }
 
 export async function getProjectById(id: string) {
-  const response = await fetch(
-    `${API_URL}/api/projects/${id}`,
-    {
-      cache: "no-store",
+  try {
+    const response = await fetch(
+      `${API_URL}/api/projects/${id}`,
+      {
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch project");
     }
-  );
+
+    return response.json();
+  } catch (error) {
+    console.error("Failed to fetch project:", error);
+    throw error;
+  }
+}
+
+/* ================================ */
+/* Discovery Engine Telemetry */
+/* ================================ */
+
+export async function getDiscoveryStatus() {
+  try {
+    const response = await fetch(`${API_URL}/api/discovery/status`, {
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch discovery status");
+    }
+    return response.json();
+  } catch (error) {
+    console.warn("Discovery status endpoint unreachable:", error);
+    return {
+      success: false,
+      data: {
+        status: "idle",
+        sources_checked: 0,
+        verified_count: 0,
+        discovered_count: 0,
+        expired_count: 0,
+        successful_sources: [],
+      },
+    };
+  }
+}
+
+export async function triggerDiscoverySync() {
+  const response = await fetch(`${API_URL}/api/discovery/trigger`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
 
   if (!response.ok) {
-    throw new Error("Failed to fetch project");
+    throw new Error("Failed to trigger discovery sync");
   }
 
   return response.json();

@@ -1,7 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import AnimatedGrid from "@/components/ui/AnimatedGrid";
+import {
+  Sparkles,
+  ArrowRight,
+  Check,
+  Presentation,
+  Trophy,
+} from "@/components/ui/Icons";
 
 interface AIdea {
   projectTitle: string;
@@ -14,16 +24,30 @@ interface AIdea {
   whyItCouldWin: string[];
 }
 
-export default function AIPage() {
-  const [domain, setDomain] = useState("");
-  const [problemArea, setProblemArea] = useState("");
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+function AIProjectLabContent() {
+  const searchParams = useSearchParams();
+  const prefillProblem = searchParams.get("problemStatement") || "";
+  const prefillDomain = searchParams.get("domain") || "";
+
+  const [domain, setDomain] = useState(prefillDomain || "Artificial Intelligence");
+  const [problemArea, setProblemArea] = useState(prefillProblem || "");
   const [skillLevel, setSkillLevel] = useState("Intermediate");
-  const [technologies, setTechnologies] = useState("");
+  const [technologies, setTechnologies] = useState("Next.js, Python, PyTorch, Supabase");
 
   const [idea, setIdea] = useState<AIdea | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (prefillProblem) {
+      requestAnimationFrame(() => {
+        setProblemArea((prev) => prev || prefillProblem);
+      });
+    }
+  }, [prefillProblem]);
 
   const generateIdea = async () => {
     setLoading(true);
@@ -32,36 +56,27 @@ export default function AIPage() {
     setCopied(false);
 
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/ai/generate-idea",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            domain,
-            problemArea,
-            skillLevel,
-            technologies,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/ai/generate-idea`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          domain,
+          problemArea,
+          skillLevel,
+          technologies,
+        }),
+      });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          result.message || "Failed to generate idea"
-        );
+        throw new Error(result.message || "Failed to synthesize project idea.");
       }
 
       setIdea(result.data.idea);
-    } catch (error) {
+    } catch (err: unknown) {
       setError(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong"
+        err instanceof Error ? err.message : "AI synthesis encountered an issue."
       );
     } finally {
       setLoading(false);
@@ -81,7 +96,7 @@ SOLUTION
 ${idea.solution}
 
 KEY FEATURES
-${idea.keyFeatures.map((feature) => `• ${feature}`).join("\n")}
+${idea.keyFeatures.map((f) => `• ${f}`).join("\n")}
 
 TECH STACK
 ${idea.techStack.join(", ")}
@@ -93,388 +108,270 @@ EXPECTED IMPACT
 ${idea.expectedImpact}
 
 WHY IT COULD WIN
-${idea.whyItCouldWin.map((reason) => `• ${reason}`).join("\n")}
+${idea.whyItCouldWin.map((r) => `• ${r}`).join("\n")}
     `.trim();
 
     await navigator.clipboard.writeText(text);
-
     setCopied(true);
-
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white">
-      <Navbar />
-
-      {/* HERO */}
-      <section className="mx-auto max-w-6xl px-6 pb-24 pt-36">
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-sm text-blue-400">
-            <span>✦</span>
-            HackHub AI
-          </div>
-
-          <h1 className="mt-6 text-4xl font-bold tracking-tight md:text-6xl">
-            Turn problems into
-            <span className="block text-blue-500">
-              winning ideas.
-            </span>
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-gray-400 md:text-lg">
-            Tell HackHub what you're interested in and let AI
-            transform your problem into a practical, innovative
-            hackathon project.
-          </p>
+    <div className="relative z-10 mx-auto max-w-6xl px-6 pb-24 pt-32">
+      {/* Header */}
+      <div className="text-center max-w-3xl mx-auto">
+        <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3.5 py-1 text-xs font-mono text-blue-400 mb-6">
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>PROJECT LAB // ARCHITECTURAL SYNTHESIS</span>
         </div>
 
-        {/* INPUT CARD */}
-        <div className="mx-auto mt-14 max-w-5xl rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl shadow-blue-500/5 md:p-10">
-          <div className="mb-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
-              Project preferences
-            </p>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+          Turn ambiguous problems into{" "}
+          <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">
+            winning architectures.
+          </span>
+        </h1>
 
-            <h2 className="mt-2 text-2xl font-bold">
-              What do you want to build?
-            </h2>
+        <p className="mt-4 text-base md:text-lg leading-relaxed text-gray-400 font-sans">
+          Specify your target hackathon domain, problem parameters, and technical
+          stack. HackHub AI designs an end-to-end technical proposal, defensible
+          differentiators, and MVP scope.
+        </p>
+      </div>
+
+      {/* Input Console */}
+      <div className="mx-auto mt-12 max-w-4xl rounded-3xl border border-white/10 bg-gradient-to-b from-[#0E1324]/90 to-[#070A12]/95 p-6 md:p-10 backdrop-blur-xl shadow-2xl">
+        <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4">
+          <div>
+            <span className="text-xs font-mono text-blue-400 block mb-1">
+              ENGINEERING PARAMETERS
+            </span>
+            <h2 className="text-xl font-bold text-white">Project Blueprint Config</h2>
+          </div>
+          <span className="text-[11px] font-mono text-gray-500">
+            GEMINI-3.6-FLASH // ACCELERATED
+          </span>
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2 text-xs font-mono">
+          {/* Domain */}
+          <div>
+            <label className="block text-gray-400 mb-2">TARGET DOMAIN</label>
+            <input
+              type="text"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              placeholder="e.g. AI / Machine Learning, FinTech, Web3"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-blue-500 font-sans"
+            />
+          </div>
+
+          {/* Skill Level */}
+          <div>
+            <label className="block text-gray-400 mb-2">SQUAD EXPERIENCE TIER</label>
+            <select
+              value={skillLevel}
+              onChange={(e) => setSkillLevel(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-blue-500 font-sans"
+            >
+              <option value="Beginner">Beginner (1st / 2nd Year)</option>
+              <option value="Intermediate">Intermediate (Hands-on Builders)</option>
+              <option value="Advanced">Advanced (Production &amp; Research)</option>
+            </select>
+          </div>
+
+          {/* Problem Area */}
+          <div className="sm:col-span-2">
+            <label className="block text-gray-400 mb-2">
+              TARGET PROBLEM OR CONTEXT
+            </label>
+            <textarea
+              rows={3}
+              value={problemArea}
+              onChange={(e) => setProblemArea(e.target.value)}
+              placeholder="Describe the friction or paste an official problem statement (e.g. V26-AI-01: Multi-Agent Clinical Data Pipeline)..."
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-blue-500 font-sans resize-none"
+            />
+          </div>
+
+          {/* Technologies */}
+          <div className="sm:col-span-2">
+            <label className="block text-gray-400 mb-2">
+              PREFERRED TECH STACK
+            </label>
+            <input
+              type="text"
+              value={technologies}
+              onChange={(e) => setTechnologies(e.target.value)}
+              placeholder="e.g. Next.js 16, Python, PyTorch, Supabase, TailwindCSS"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-blue-500 font-sans"
+            />
+          </div>
+        </div>
+
+        {/* Generate Button */}
+        <button
+          onClick={generateIdea}
+          disabled={loading || !domain.trim() || !problemArea.trim()}
+          className="mt-8 w-full rounded-xl bg-blue-600 hover:bg-blue-500 py-4 px-6 text-center text-xs font-mono font-bold text-white transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 disabled:opacity-40 disabled:cursor-not-allowed group"
+        >
+          {loading ? (
+            <>
+              <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              <span>SYNTHESIZING TECHNICAL SPECIFICATION...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              <span>SYNTHESIZE HACKATHON PROJECT BLUEPRINT</span>
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </>
+          )}
+        </button>
+
+        {error && (
+          <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-xs font-mono text-red-300">
+            {error}
+          </div>
+        )}
+      </div>
+
+      {/* Generated Blueprint View */}
+      {idea && !loading && (
+        <section className="mx-auto mt-12 max-w-4xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-blue-500/30 bg-blue-500/[0.04] p-6 backdrop-blur-md">
+            <div>
+              <span className="text-xs font-mono text-blue-400 block mb-1">
+                SYNTHESIS ARTIFACT
+              </span>
+              <h2 className="text-2xl font-bold text-white font-mono">
+                {idea.projectTitle}
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={copyIdea}
+                className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-xs font-mono text-gray-300 hover:text-white transition"
+              >
+                {copied ? "✓ COPIED" : "COPY TEXT"}
+              </button>
+
+              <Link
+                href={`/ppt-maker?projectTitle=${encodeURIComponent(
+                  idea.projectTitle
+                )}&problemStatement=${encodeURIComponent(
+                  idea.problemStatement
+                )}&solution=${encodeURIComponent(
+                  idea.solution
+                )}&techStack=${encodeURIComponent(idea.techStack.join(", "))}`}
+                className="rounded-xl bg-amber-500 text-black px-4 py-2 text-xs font-mono font-bold hover:bg-amber-400 transition flex items-center gap-1.5"
+              >
+                <Presentation className="h-4 w-4" />
+                <span>BUILD 10-SLIDE DECK</span>
+              </Link>
+            </div>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            {/* DOMAIN */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
-                Domain
-              </label>
-
-              <input
-                type="text"
-                value={domain}
-                onChange={(e) => setDomain(e.target.value)}
-                placeholder="AI, Healthcare, Cybersecurity..."
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3.5 text-white outline-none transition placeholder:text-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
-              />
-            </div>
-
-            {/* PROBLEM AREA */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
-                Problem area
-              </label>
-
-              <input
-                type="text"
-                value={problemArea}
-                onChange={(e) =>
-                  setProblemArea(e.target.value)
-                }
-                placeholder="Education, Traffic, Agriculture..."
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3.5 text-white outline-none transition placeholder:text-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
-              />
-            </div>
-
-            {/* SKILL LEVEL */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
-                Skill level
-              </label>
-
-              <select
-                value={skillLevel}
-                onChange={(e) =>
-                  setSkillLevel(e.target.value)
-                }
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3.5 text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
-              >
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">
-                  Intermediate
-                </option>
-                <option value="Advanced">Advanced</option>
-              </select>
-            </div>
-
-            {/* TECHNOLOGIES */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
-                Preferred technologies
-              </label>
-
-              <input
-                type="text"
-                value={technologies}
-                onChange={(e) =>
-                  setTechnologies(e.target.value)
-                }
-                placeholder="React, Node.js, Python..."
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3.5 text-white outline-none transition placeholder:text-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
-              />
-            </div>
-          </div>
-
-          {/* GENERATE BUTTON */}
-          <button
-            onClick={generateIdea}
-            disabled={
-              loading ||
-              !domain.trim() ||
-              !problemArea.trim()
-            }
-            className="group mt-8 flex w-full items-center justify-center gap-3 rounded-xl bg-blue-600 py-4 font-semibold text-white transition hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {loading ? (
-              <>
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                Generating your idea...
-              </>
-            ) : (
-              <>
-                <span className="text-lg">✦</span>
-                Generate Hackathon Idea
-                <span className="transition-transform group-hover:translate-x-1">
-                  →
-                </span>
-              </>
-            )}
-          </button>
-
-          {error && (
-            <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
-              <div className="font-semibold">
-                Something went wrong
-              </div>
-
-              <div className="mt-1 text-red-400/80">
-                {error}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* LOADING MESSAGE */}
-        {loading && (
-          <div className="mx-auto mt-12 max-w-5xl text-center">
-            <div className="rounded-3xl border border-blue-500/10 bg-blue-500/[0.03] p-10">
-              <div className="mx-auto mb-5 h-10 w-10 animate-pulse rounded-full bg-blue-500/20" />
-
-              <p className="font-medium text-gray-300">
-                HackHub AI is thinking...
+            <div className="rounded-2xl border border-white/10 bg-[#0A0D16]/80 p-6 backdrop-blur-md">
+              <span className="text-xs font-mono text-rose-400 block mb-2 font-bold">
+                PROBLEM FORMULATION
+              </span>
+              <p className="text-sm leading-relaxed text-gray-300 font-sans">
+                {idea.problemStatement}
               </p>
+            </div>
 
-              <p className="mt-2 text-sm text-gray-500">
-                Finding a problem worth solving and turning it
-                into a hackathon-ready concept.
+            <div className="rounded-2xl border border-white/10 bg-[#0A0D16]/80 p-6 backdrop-blur-md">
+              <span className="text-xs font-mono text-blue-400 block mb-2 font-bold">
+                PROPOSED SOLUTION &amp; MVP
+              </span>
+              <p className="text-sm leading-relaxed text-gray-300 font-sans">
+                {idea.solution}
               </p>
             </div>
           </div>
-        )}
 
-        {/* AI RESULT */}
-        {idea && !loading && (
-          <section className="mx-auto mt-14 max-w-5xl">
-            {/* RESULT HEADER */}
-            <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.2em] text-blue-400">
-                  <span>✦</span>
-                  AI Generated Concept
-                </div>
-
-                <h2 className="mt-3 text-3xl font-bold md:text-4xl">
-                  {idea.projectTitle}
-                </h2>
-              </div>
-
-              <button
-                onClick={copyIdea}
-                className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-gray-300 transition hover:bg-white/[0.08] hover:text-white"
-              >
-                {copied ? "✓ Copied!" : "📋 Copy idea"}
-              </button>
-            </div>
-
-            {/* PROBLEM + SOLUTION */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7">
-                <div className="mb-5 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 text-lg">
-                    🎯
-                  </div>
-
-                  <h3 className="font-semibold">
-                    Problem Statement
-                  </h3>
-                </div>
-
-                <p className="text-sm leading-7 text-gray-400">
-                  {idea.problemStatement}
-                </p>
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7">
-                <div className="mb-5 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-lg">
-                    💡
-                  </div>
-
-                  <h3 className="font-semibold">
-                    Proposed Solution
-                  </h3>
-                </div>
-
-                <p className="text-sm leading-7 text-gray-400">
-                  {idea.solution}
-                </p>
-              </div>
-            </div>
-
-            {/* KEY FEATURES */}
-            <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-7">
-              <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-500/10 text-lg">
-                  ⚡
-                </div>
-
-                <div>
-                  <h3 className="font-semibold">
-                    Key Features
-                  </h3>
-
-                  <p className="mt-1 text-sm text-gray-500">
-                    What makes the product useful
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                {idea.keyFeatures.map((feature, index) => (
-                  <div
-                    key={index}
-                    className="flex gap-3 rounded-xl border border-white/5 bg-black/20 p-4"
-                  >
-                    <span className="mt-0.5 text-blue-500">
-                      ✓
-                    </span>
-
-                    <p className="text-sm leading-6 text-gray-400">
-                      {feature}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* TECH STACK */}
-            <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-7">
-              <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-lg">
-                  🛠
-                </div>
-
-                <h3 className="font-semibold">
-                  Recommended Tech Stack
-                </h3>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                {idea.techStack.map((technology, index) => (
-                  <span
-                    key={index}
-                    className="rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-sm text-blue-300"
-                  >
-                    {technology}
+          {/* Key Features */}
+          <div className="rounded-2xl border border-white/10 bg-[#0A0D16]/80 p-6 backdrop-blur-md">
+            <span className="text-xs font-mono text-yellow-400 block mb-3 font-bold">
+              FUNCTIONAL ARCHITECTURE DELIVERABLES
+            </span>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {idea.keyFeatures.map((feat, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-2.5 rounded-xl border border-white/5 bg-black/30 p-3.5"
+                >
+                  <Check className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                  <span className="text-xs leading-relaxed text-gray-300 font-sans">
+                    {feat}
                   </span>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
+          </div>
 
-            {/* INNOVATION + IMPACT */}
-            <div className="mt-6 grid gap-6 md:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7">
-                <div className="mb-5 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-500/10 text-lg">
-                    🚀
-                  </div>
-
-                  <h3 className="font-semibold">
-                    Innovation
-                  </h3>
-                </div>
-
-                <p className="text-sm leading-7 text-gray-400">
-                  {idea.innovation}
-                </p>
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7">
-                <div className="mb-5 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-lg">
-                    🌍
-                  </div>
-
-                  <h3 className="font-semibold">
-                    Expected Impact
-                  </h3>
-                </div>
-
-                <p className="text-sm leading-7 text-gray-400">
-                  {idea.expectedImpact}
-                </p>
-              </div>
+          {/* Tech Stack */}
+          <div className="rounded-2xl border border-white/10 bg-[#0A0D16]/80 p-6 backdrop-blur-md">
+            <span className="text-xs font-mono text-purple-400 block mb-3 font-bold">
+              SYSTEM COMPONENTS &amp; DEPENDENCIES
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {idea.techStack.map((tech, idx) => (
+                <span
+                  key={idx}
+                  className="rounded-lg border border-purple-500/20 bg-purple-500/10 px-3 py-1.5 text-xs font-mono text-purple-300"
+                >
+                  {tech}
+                </span>
+              ))}
             </div>
+          </div>
 
-            {/* WHY IT COULD WIN */}
-            <div className="mt-6 rounded-3xl border border-blue-500/20 bg-blue-500/[0.04] p-7 md:p-8">
-              <div className="mb-7 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-500/10 text-xl">
-                  🏆
-                </div>
-
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">
-                    Hackathon strategy
+          {/* Why It Could Win */}
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.04] p-6 backdrop-blur-md">
+            <span className="text-xs font-mono text-amber-400 block mb-3 font-bold flex items-center gap-1.5">
+              <Trophy className="h-3.5 w-3.5" />
+              JUDGE ADVANTAGE &amp; COMPETITIVE DIFFERENTIATION
+            </span>
+            <div className="space-y-3">
+              {idea.whyItCouldWin.map((r, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 rounded-xl border border-white/5 bg-black/30 p-4"
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-xs font-bold font-mono text-amber-400">
+                    {idx + 1}
+                  </span>
+                  <p className="text-xs leading-relaxed text-gray-300 font-sans">
+                    {r}
                   </p>
-
-                  <h3 className="mt-1 text-xl font-bold">
-                    Why this could win
-                  </h3>
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                {idea.whyItCouldWin.map((reason, index) => (
-                  <div
-                    key={index}
-                    className="flex gap-4 rounded-2xl border border-white/5 bg-black/20 p-5"
-                  >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-sm font-bold text-blue-400">
-                      {String(index + 1).padStart(2, "0")}
-                    </div>
-
-                    <p className="text-sm leading-7 text-gray-300">
-                      {reason}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
 
-            {/* REGENERATE */}
-            <div className="mt-8 text-center">
-              <button
-                onClick={generateIdea}
-                disabled={loading}
-                className="rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-medium text-gray-300 transition hover:bg-white/[0.08] hover:text-white"
-              >
-                🔄 Generate another idea
-              </button>
-            </div>
-          </section>
-        )}
-      </section>
+export default function AIPage() {
+  return (
+    <main className="relative min-h-screen bg-[#050505] text-white selection:bg-blue-500/30 overflow-hidden font-sans">
+      <AnimatedGrid />
+      <Navbar />
+      <Suspense
+        fallback={
+          <div className="py-32 text-center text-xs font-mono text-gray-500">
+            LOADING PROJECT LAB...
+          </div>
+        }
+      >
+        <AIProjectLabContent />
+      </Suspense>
     </main>
   );
 }

@@ -8,8 +8,11 @@ const aiRoutes = require("./routes/aiRoutes");
 const winnerAnalyzerRoutes = require("./routes/winnerAnalyzerRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const teamRoutes = require("./routes/teamRoutes");
-const app = express();
+const pptRoutes = require("./routes/pptRoutes");
+const discoveryRoutes = require("./routes/discoveryRoutes");
+const discoveryEngine = require("./engine/discoveryEngine");
 
+const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
@@ -27,9 +30,11 @@ app.use("/api/winner-analyzer", winnerAnalyzerRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/profiles", profileRoutes);
+app.use("/api/ppt", pptRoutes);
+app.use("/api/discovery", discoveryRoutes);
 
 app.listen(PORT, () => {
-  console.log(
-    `HackHub API running on http://localhost:${PORT}`
-  );
+  console.log(`HackHub API running on http://localhost:${PORT}`);
+  // Start automated background hackathon discovery engine (6-hour refresh interval)
+  discoveryEngine.startScheduler(6);
 });

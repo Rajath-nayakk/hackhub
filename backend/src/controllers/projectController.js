@@ -1,4 +1,5 @@
 const supabase = require("../config/supabase");
+const { projects: seedProjects } = require("../data/seedData");
 
 // GET all projects
 const getProjects = async (req, res) => {
@@ -9,12 +10,14 @@ const getProjects = async (req, res) => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Supabase error:", error);
+      console.warn("Supabase unavailable. Serving development projects dataset:", error.message);
 
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch projects",
-        error: error.message,
+      return res.status(200).json({
+        success: true,
+        count: seedProjects.length,
+        data: seedProjects,
+        source: "development-seed",
+        notice: "Displaying development projects archive because live database is offline."
       });
     }
 
@@ -22,17 +25,20 @@ const getProjects = async (req, res) => {
       success: true,
       count: data.length,
       data,
+      source: "supabase"
     });
   } catch (error) {
-    console.error("Server error:", error);
+    console.warn("Server error, using development projects:", error.message);
 
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
+    res.status(200).json({
+      success: true,
+      count: seedProjects.length,
+      data: seedProjects,
+      source: "development-seed",
+      notice: "Displaying development projects archive because live database is offline."
     });
   }
 };
-
 
 // GET single project
 const getProjectById = async (req, res) => {
@@ -46,28 +52,35 @@ const getProjectById = async (req, res) => {
       .single();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return res.status(404).json({
-          success: false,
-          message: "Project not found",
+      const found = seedProjects.find((p) => String(p.id) === String(id));
+      if (found) {
+        return res.status(200).json({
+          success: true,
+          data: found,
+          source: "development-seed"
         });
       }
 
-      console.error("Supabase error:", error);
-
-      return res.status(500).json({
+      return res.status(404).json({
         success: false,
-        message: "Failed to fetch project",
-        error: error.message,
+        message: "Project not found",
       });
     }
 
     res.status(200).json({
       success: true,
       data,
+      source: "supabase"
     });
   } catch (error) {
-    console.error("Server error:", error);
+    const found = seedProjects.find((p) => String(p.id) === String(req.params.id));
+    if (found) {
+      return res.status(200).json({
+        success: true,
+        data: found,
+        source: "development-seed"
+      });
+    }
 
     res.status(500).json({
       success: false,
@@ -75,7 +88,6 @@ const getProjectById = async (req, res) => {
     });
   }
 };
-
 
 module.exports = {
   getProjects,

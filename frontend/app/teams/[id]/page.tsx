@@ -1,5 +1,8 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import AnimatedGrid from "@/components/ui/AnimatedGrid";
+import { Users, ArrowLeft, Trophy, ArrowRight } from "@/components/ui/Icons";
+import { Metadata } from "next";
 
 interface TeamPageProps {
   params: Promise<{ id: string }>;
@@ -25,8 +28,7 @@ interface Team {
   team_members?: TeamMember[];
 }
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 async function getTeam(id: string): Promise<Team> {
   const response = await fetch(`${API_URL}/api/teams/${id}`, {
@@ -38,13 +40,25 @@ async function getTeam(id: string): Promise<Team> {
   }
 
   const result = await response.json();
-
   return result.data;
 }
 
-export default async function TeamDetails({
+export async function generateMetadata({
   params,
-}: TeamPageProps) {
+}: TeamPageProps): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const team = await getTeam(id);
+    return {
+      title: `${team.name} | HackHub Squad`,
+      description: team.description,
+    };
+  } catch {
+    return { title: "Squad Details | HackHub" };
+  }
+}
+
+export default async function TeamDetails({ params }: TeamPageProps) {
   const { id } = await params;
 
   let team: Team;
@@ -53,25 +67,21 @@ export default async function TeamDetails({
     team = await getTeam(id);
   } catch {
     return (
-      <main className="min-h-screen bg-[#050505] text-white">
+      <main className="min-h-screen bg-[#050505] text-white selection:bg-blue-500/30">
         <Navbar />
-
-        <div className="mx-auto max-w-4xl px-6 py-24 text-center">
-          <div className="text-6xl">🔍</div>
-
-          <h1 className="mt-6 text-3xl font-bold">
-            Team Not Found
-          </h1>
-
-          <p className="mt-3 text-gray-400">
-            This team doesn't exist or is no longer available.
+        <div className="mx-auto max-w-4xl px-6 py-32 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-gray-400">
+            <Users className="h-8 w-8" />
+          </div>
+          <h1 className="text-2xl font-bold font-mono">SQUAD NOT FOUND</h1>
+          <p className="mt-2 text-sm text-gray-400">
+            This squad does not exist, has been disbanded, or is unavailable in the database.
           </p>
-
           <Link
             href="/teams"
-            className="mt-8 inline-block rounded-xl bg-white px-6 py-3 font-semibold text-black"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-mono font-bold text-white hover:bg-blue-500 transition"
           >
-            ← Back to Teams
+            ← BACK TO SQUAD DIRECTORY
           </Link>
         </div>
       </main>
@@ -81,108 +91,97 @@ export default async function TeamDetails({
   const members = team.team_members || [];
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white">
+    <main className="relative min-h-screen bg-[#050505] text-white selection:bg-blue-500/30 overflow-hidden font-sans">
+      <AnimatedGrid />
       <Navbar />
 
-      <div className="mx-auto max-w-5xl px-6 py-10">
-
+      <div className="relative z-10 mx-auto max-w-5xl px-6 pb-24 pt-32">
         <Link
           href="/teams"
-          className="text-sm text-gray-400 hover:text-white"
+          className="inline-flex items-center gap-2 text-xs font-mono text-gray-400 hover:text-white transition mb-6"
         >
-          ← Back to Team Finder
+          <ArrowLeft className="h-4 w-4" />
+          <span>BACK TO SQUAD FINDER</span>
         </Link>
 
-        {/* Hero */}
-        <section className="mt-8 rounded-3xl border border-white/10 bg-gradient-to-br from-purple-500/10 to-blue-500/5 p-8 md:p-12">
-
+        {/* Hero Card */}
+        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#0E1324]/90 to-[#070A12]/95 p-8 md:p-12 backdrop-blur-xl shadow-2xl relative overflow-hidden">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full bg-green-400/10 px-4 py-2 text-sm font-semibold text-green-400">
-              ● {team.status === "open" ? "Open for members" : "Closed"}
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-mono font-bold text-emerald-400">
+              ● {team.status === "open" ? "OPEN FOR MEMBERS" : "SQUAD SEALED"}
             </span>
 
             {team.hackathons?.title && (
-              <span className="rounded-full border border-white/10 px-4 py-2 text-sm text-gray-300">
-                🏆 {team.hackathons.title}
+              <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-3.5 py-1 text-xs font-mono text-purple-300 flex items-center gap-1.5">
+                <Trophy className="h-3.5 w-3.5" />
+                <span>{team.hackathons.title}</span>
               </span>
             )}
           </div>
 
-          <h1 className="mt-6 text-4xl font-bold md:text-5xl">
+          <h1 className="mt-6 text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
             {team.name}
           </h1>
 
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-gray-400">
+          <p className="mt-4 max-w-3xl text-base md:text-lg leading-relaxed text-gray-300 font-sans">
             {team.description}
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-4">
-
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4">
-              <p className="text-xs text-gray-500">
-                TEAM CAPACITY
-              </p>
-
-              <p className="mt-1 text-xl font-bold">
+          <div className="mt-8 flex flex-wrap gap-4 font-mono text-xs">
+            <div className="rounded-xl border border-white/10 bg-black/40 px-5 py-3">
+              <span className="text-gray-500 block">ENROLLED MEMBERS</span>
+              <span className="mt-1 text-lg font-bold text-white block">
                 {members.length} / {team.max_members}
-              </p>
+              </span>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4">
-              <p className="text-xs text-gray-500">
-                SPOTS LEFT
-              </p>
-
-              <p className="mt-1 text-xl font-bold">
-                {Math.max(team.max_members - members.length, 0)}
-              </p>
+            <div className="rounded-xl border border-white/10 bg-black/40 px-5 py-3">
+              <span className="text-gray-500 block">OPEN SEATS</span>
+              <span className="mt-1 text-lg font-bold text-emerald-400 block">
+                {Math.max(team.max_members - members.length, 0)} SEATS
+              </span>
             </div>
-
           </div>
         </section>
 
-        {/* Content */}
+        {/* Content Section */}
         <div className="mt-8 grid gap-8 md:grid-cols-3">
-
-          {/* Members */}
-          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-7 md:col-span-2">
-
-            <h2 className="text-2xl font-bold">
-              Team Members
+          {/* Members Column */}
+          <section className="rounded-2xl border border-white/10 bg-[#0A0D16]/80 p-7 md:col-span-2 backdrop-blur-md">
+            <h2 className="text-xl font-bold font-mono text-white mb-6">
+              Enrolled Engineers
             </h2>
 
             {members.length === 0 ? (
-              <div className="mt-8 rounded-xl border border-dashed border-white/10 p-8 text-center">
-                <div className="text-4xl">👤</div>
-
-                <p className="mt-3 text-gray-400">
-                  No members have joined yet.
+              <div className="rounded-xl border border-dashed border-white/10 p-8 text-center">
+                <p className="text-xs font-mono text-gray-500">
+                  No squad members enrolled yet.
                 </p>
               </div>
             ) : (
-              <div className="mt-6 space-y-4">
+              <div className="space-y-4">
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4"
+                    className="flex items-center gap-4 rounded-xl border border-white/10 bg-black/30 p-4"
                   >
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10">
-                      👤
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/10 text-purple-400 font-mono text-sm font-bold">
+                      #{member.user_id}
                     </div>
 
                     <div>
-                      <p className="font-semibold">
-                        User #{member.user_id}
+                      <p className="font-bold text-sm text-white font-mono">
+                        Developer #{member.user_id}
                       </p>
 
                       {member.role && (
-                        <p className="text-sm text-purple-300">
+                        <p className="text-xs text-purple-300 font-mono">
                           {member.role}
                         </p>
                       )}
 
                       {member.skills && (
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-xs text-gray-500 font-mono">
                           {member.skills}
                         </p>
                       )}
@@ -191,40 +190,35 @@ export default async function TeamDetails({
                 ))}
               </div>
             )}
-
           </section>
 
-          {/* Join */}
-          <aside className="h-fit rounded-2xl border border-purple-400/20 bg-purple-400/[0.05] p-7">
+          {/* Join Sidebar */}
+          <aside className="h-fit rounded-2xl border border-blue-500/30 bg-blue-500/[0.04] p-7 backdrop-blur-md">
+            <span className="text-xs font-mono text-blue-400 block mb-1">
+              RECRUITMENT
+            </span>
+            <h3 className="text-xl font-bold text-white">Join Squad</h3>
 
-            <div className="text-4xl">🤝</div>
-
-            <h2 className="mt-5 text-2xl font-bold">
-              Join this team
-            </h2>
-
-            <p className="mt-3 text-sm leading-6 text-gray-400">
-              Think you can contribute? Join the team and
-              start building something great.
+            <p className="mt-3 text-xs leading-relaxed text-gray-400 font-sans">
+              Have complementary skills in AI, full-stack, or systems architecture?
+              Request an invitation to join this squad.
             </p>
 
-            {team.status === "open" &&
-            members.length < team.max_members ? (
+            {team.status === "open" && members.length < team.max_members ? (
               <Link
                 href={`/teams/${team.id}/join`}
-                className="mt-6 block rounded-xl bg-white px-5 py-3 text-center font-semibold text-black transition hover:bg-gray-200"
+                className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-3 text-center text-xs font-mono font-bold text-white transition shadow-lg shadow-blue-600/20"
               >
-                Join Team →
+                <span>REQUEST MEMBERSHIP</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             ) : (
-              <div className="mt-6 rounded-xl bg-white/10 px-5 py-3 text-center font-semibold text-gray-500">
-                Team Full
+              <div className="mt-6 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-center text-xs font-mono font-semibold text-gray-500">
+                SQUAD CAPACITY REACHED
               </div>
             )}
-
           </aside>
         </div>
-
       </div>
     </main>
   );
