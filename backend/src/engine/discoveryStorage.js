@@ -13,7 +13,11 @@ class DiscoveryStorage {
     try {
       if (fs.existsSync(CACHE_FILE_PATH)) {
         const raw = fs.readFileSync(CACHE_FILE_PATH, "utf8");
-        return JSON.parse(raw);
+        const list = JSON.parse(raw);
+        return list.map((item) => ({
+          ...item,
+          id: item.id || item.slug || item.source_id,
+        }));
       }
     } catch (err) {
       console.warn("[DiscoveryStorage] Failed to read offline cache:", err.message);

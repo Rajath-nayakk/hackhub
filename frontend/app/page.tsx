@@ -16,7 +16,9 @@ import {
 } from "@/components/ui/Icons";
 
 interface Hackathon {
-  id: number;
+  id?: number | string;
+  slug?: string;
+  source_id?: string;
   title: string;
   organizer: string;
   description: string | null;
@@ -185,7 +187,7 @@ export default async function Home() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {hackathons.slice(0, 3).map((hackathon) => (
             <TiltCard
-              key={hackathon.id}
+              key={hackathon.id || hackathon.slug || hackathon.source_id}
               className="p-6 flex flex-col justify-between"
               data-cursor="EXPLORE →"
             >
@@ -235,7 +237,7 @@ export default async function Home() {
                 )}
 
                 <Link
-                  href={`/hackathons/${hackathon.id}`}
+                  href={`/hackathons/${hackathon.slug || hackathon.id || hackathon.source_id}`}
                   className="mt-4 block w-full rounded-xl bg-white/[0.06] hover:bg-blue-600 hover:text-white text-center py-2 text-xs font-semibold transition-all duration-200"
                 >
                   View Details →
